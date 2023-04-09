@@ -198,8 +198,8 @@ class Loss:
 
 
 def train(cfg=DEFAULT_CFG, use_python=False):
-    model = './yolov8n.pt'
-    data = './train_1.yaml'  # or yolo.ClassificationDataset("mnist")
+    model = r'models/yolov8n.pt'
+    data = r'dataset/train_1.yaml'  # or yolo.ClassificationDataset("mnist")
     device = cfg.device if cfg.device is not None else ''
 
     args = dict(model=model, data=data, device=device)
