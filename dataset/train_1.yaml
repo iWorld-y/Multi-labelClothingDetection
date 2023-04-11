@@ -1,7 +1,7 @@
 path: /home/eugene/dataSet/DeepFashion2  # dataset root dir
 train: train
 val: validation
-
+# test: test
 # Classes
 nc: 13  # number of classes
 names: [ 'short sleeve top', 'long sleeve top','short sleeve outwear','long sleeve outwear',
