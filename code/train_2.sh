@@ -5,6 +5,6 @@ yolo \
   data="dataset/train_1.yaml" \
   epochs=10 \
   imgsz=640 \
-  batch=40 \
+  batch=-1 \
   save=true \
   patience=50
