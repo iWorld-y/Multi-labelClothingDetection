@@ -6,9 +6,9 @@ import os.path
 from PIL import Image
 from tqdm import tqdm
 
-root_path = r"/home/eugene/dataSet/DeepFashion2"
+root_path = r"/root/autodl-tmp/DeepFasion2"
 train_data_path = fr"{root_path}/train"
-vaild_data_path = fr"{root_path}/train/validation"
+vaild_data_path = fr"{root_path}/validation"
 test_data_path = fr"{root_path}/test"
 data_path = vaild_data_path
 
