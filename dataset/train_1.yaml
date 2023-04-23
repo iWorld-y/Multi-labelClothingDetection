@@ -1,9 +1,0 @@
-path: /root/autodl-tmp/DeepFasion2       # dataset root dir
-train: train
-val: validation
-# test: test
-# Classes
-nc: 13  # number of classes
-names: [ 'short sleeve top', 'long sleeve top','short sleeve outwear','long sleeve outwear',
-         'vest','sling','shorts','trousers','skirt','short sleeve dress','long sleeve dress',
-         'vest dress','sling dress' ]  # class names

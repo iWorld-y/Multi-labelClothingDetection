@@ -1,0 +1,1 @@
+python ~/code/yolov5-master/train.py --batch-size 192 --data dataset/fashion2 --img 640 --epochs 100 --weight models/yolov5n.pt
