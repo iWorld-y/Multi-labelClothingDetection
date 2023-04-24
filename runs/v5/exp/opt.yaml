@@ -1,4 +1,4 @@
-weights: models/yolov5n.pt
+weights: runs/v5/exp/weights/last.pt
 cfg: ''
 data: dataset/fashion2.yaml
 hyp:
@@ -30,11 +30,11 @@ hyp:
   mosaic: 1.0
   mixup: 0.0
   copy_paste: 0.0
-epochs: 100
+epochs: 300
 batch_size: 192
 imgsz: 640
 rect: false
-resume: false
+resume: true
 nosave: false
 noval: false
 noautoanchor: false
@@ -55,7 +55,7 @@ exist_ok: false
 quad: false
 cos_lr: false
 label_smoothing: 0.0
-patience: 100
+patience: 50
 freeze:
 - 0
 save_period: -1
