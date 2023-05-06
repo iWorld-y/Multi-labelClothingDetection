@@ -10,7 +10,7 @@ import getpass
 def main():
     username = getpass.getuser()
     if (username == 'root'):
-        root_path = r'/root/autodl-tmp/VOC_DeepFashion2/{}'
+        root_path = r'/root/autodl-tmp/VOC_DeepFashion2/'
     else:
         root_path = rf'/home/{username}/autodl-tmp/VOC_DeepFashion2/'
 
