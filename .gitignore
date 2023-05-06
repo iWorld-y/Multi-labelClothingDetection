@@ -1,2 +1,3 @@
 .idea
-draft
+models
+code/pytorch_object_detection/faster_rcnn/backbone/*.pth

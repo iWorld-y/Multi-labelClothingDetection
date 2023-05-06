@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+	<annotation>
+		<folder>driving_annotation_dataset</folder>
+		<filename>000001.jpg</filename>
+		<size>
+			<width>468</width>
+			<height>624</height>
+			<depth>3</depth>
+		</size>
+		<object>
+			<name>trousers</name>
+			<pose>Unspecified</pose>
+			<truncated>0</truncated>
+			<difficult>0</difficult>
+			<bndbox>
+				<xmin>250</xmin>
+				<ymin>423</ymin>
+				<xmax>467</xmax>
+				<ymax>624</ymax>
+			</bndbox>
+		</object>
+		<object>
+			<name>short sleeve top</name>
+			<pose>Unspecified</pose>
+			<truncated>0</truncated>
+			<difficult>0</difficult>
+			<bndbox>
+				<xmin>1</xmin>
+				<ymin>30</ymin>
+				<xmax>466</xmax>
+				<ymax>623</ymax>
+			</bndbox>
+		</object>
+	</annotation>
