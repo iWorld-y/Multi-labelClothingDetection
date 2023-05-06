@@ -1,8 +1,8 @@
 task: detect
 mode: train
-model: runs/detect/train4/weights/last.pt
+model: models/yolov8n.pt
 data: dataset/train_1.yaml
-epochs: 150
+epochs: 100
 patience: 50
 batch: 192
 imgsz: 640
@@ -24,7 +24,7 @@ image_weights: false
 rect: false
 cos_lr: false
 close_mosaic: 0
-resume: true
+resume: false
 amp: true
 overlap_mask: true
 mask_ratio: 4

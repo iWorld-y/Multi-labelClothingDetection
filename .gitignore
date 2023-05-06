@@ -1,3 +1,6 @@
 .idea
 models
 code/pytorch_object_detection/faster_rcnn/backbone/*.pth
+*.pyc
+*/__pycache__/
+**/__pycache__/
