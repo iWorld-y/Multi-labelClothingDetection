@@ -22,11 +22,12 @@ def makexml(picPath: str, txtPath: str, xmlPath: str) -> None:
     """
     # 创建字典用来对类型进行转换
     # 此处的字典要与自己的classes.txt文件中的类对应，且顺序要一致
-    dic = {'0': 'short sleeve top', '1': 'long sleeve top', '2': 'short sleeve outwear', '3': 'long sleeve outwear', '4': 'vest', '5': 'sling',
-           '6': 'shorts', '7': 'trousers', '8': 'skirt', '9': 'short sleeve dress', '10': 'long sleeve dress', '11': 'vest dress', '12': 'sling dress'}
+    dic = {'0': 'short sleeve top', '1': 'long sleeve top', '2': 'short sleeve outwear', '3': 'long sleeve outwear',
+           '4': 'vest', '5': 'sling',
+           '6': 'shorts', '7': 'trousers', '8': 'skirt', '9': 'short sleeve dress', '10': 'long sleeve dress',
+           '11': 'vest dress', '12': 'sling dress'}
 
     files = os.listdir(txtPath)
-    # for i, name in enumerate(files):
     for i, name in tqdm(enumerate(files), total=len(files)):
         xmlBuilder = Document()
         annotation = xmlBuilder.createElement("annotation")  # 创建annotation标签
@@ -37,7 +38,7 @@ def makexml(picPath: str, txtPath: str, xmlPath: str) -> None:
         Pheight, Pwidth, Pdepth = img.shape
 
         folder = xmlBuilder.createElement("folder")  # folder标签
-        foldercontent = xmlBuilder.createTextNode("driving_annotation_dataset")
+        foldercontent = xmlBuilder.createTextNode("images")
         folder.appendChild(foldercontent)
         annotation.appendChild(folder)  # folder标签结束
 
@@ -124,6 +125,8 @@ def makexml(picPath: str, txtPath: str, xmlPath: str) -> None:
         xmlBuilder.writexml(f, indent='\t', newl='\n',
                             addindent='\t', encoding='utf-8')
         f.close()
+
+
 # 定义函数，用于多线程执行 makexml() 函数
 
 
