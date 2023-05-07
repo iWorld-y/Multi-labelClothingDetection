@@ -26,8 +26,10 @@ def create_model(num_classes, load_pretrain_weights=True):
     if load_pretrain_weights:
         # 载入预训练模型权重
         # https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth
-        weights_dict = torch.load("./backbone/fasterrcnn_resnet50_fpn_coco.pth", map_location='cpu')
-        missing_keys, unexpected_keys = model.load_state_dict(weights_dict, strict=False)
+        weights_dict = torch.load(
+            "./backbone/fasterrcnn_resnet50_fpn_coco.pth", map_location='cpu')
+        missing_keys, unexpected_keys = model.load_state_dict(
+            weights_dict, strict=False)
         if len(missing_keys) != 0 or len(unexpected_keys) != 0:
             print("missing_keys: ", missing_keys)
             print("unexpected_keys: ", unexpected_keys)
@@ -45,7 +47,8 @@ def main(args):
     print("Using {} device training.".format(device.type))
 
     # 用来保存coco_info的文件
-    results_file = "results{}.txt".format(datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+    results_file = "results{}.txt".format(
+        datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 
     data_transform = {
         "train": transforms.Compose([transforms.ToTensor(),
@@ -56,11 +59,13 @@ def main(args):
     VOC_root = args.data_path
     # check voc root
     if os.path.exists(os.path.join(VOC_root, "VOC_DeepFashion2")) is False:
-        raise FileNotFoundError("VOC_DeepFashion2 dose not in path:'{}'.".format(VOC_root))
+        raise FileNotFoundError(
+            "VOC_DeepFashion2 dose not in path:'{}'.".format(VOC_root))
 
     # load train data set
     # VOCdevkit -> VOC2012 -> ImageSets -> Main -> train.txt
-    train_dataset = VOCDataSet(VOC_root + "VOC_DeepFashion2", data_transform["train"], "train.txt")
+    train_dataset = VOCDataSet(
+        VOC_root + "VOC_DeepFashion2", data_transform["train"], "train.txt")
     train_sampler = None
 
     # 是否按图片相似高宽比采样图片组成batch
@@ -68,13 +73,16 @@ def main(args):
     if args.aspect_ratio_group_factor >= 0:
         train_sampler = torch.utils.data.RandomSampler(train_dataset)
         # 统计所有图像高宽比例在bins区间中的位置索引
-        group_ids = create_aspect_ratio_groups(train_dataset, k=args.aspect_ratio_group_factor)
+        group_ids = create_aspect_ratio_groups(
+            train_dataset, k=args.aspect_ratio_group_factor)
         # 每个batch图片从同一高宽比例区间中取
-        train_batch_sampler = GroupedBatchSampler(train_sampler, group_ids, args.batch_size)
+        train_batch_sampler = GroupedBatchSampler(
+            train_sampler, group_ids, args.batch_size)
 
     # 注意这里的collate_fn是自定义的，因为读取的数据包括image和targets，不能直接使用默认的方法合成batch
     batch_size = args.batch_size
-    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
+    # number of workers
+    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])
     print('Using %g dataloader workers' % nw)
     if train_sampler:
         # 如果按照图片高宽比采样图片，dataloader中需要使用batch_sampler
@@ -93,7 +101,8 @@ def main(args):
 
     # load validation data set
     # VOCdevkit -> VOC2012 -> ImageSets -> Main -> val.txt
-    val_dataset = VOCDataSet(VOC_root + "VOC_DeepFashion2", data_transform["val"], "val.txt")
+    val_dataset = VOCDataSet(
+        VOC_root + "VOC_DeepFashion2", data_transform["val"], "val.txt")
     val_data_set_loader = torch.utils.data.DataLoader(val_dataset,
                                                       batch_size=1,
                                                       shuffle=False,
@@ -154,7 +163,8 @@ def main(args):
         # write into txt
         with open(results_file, "a") as f:
             # 写入的数据包括coco指标还有loss和learning rate
-            result_info = [f"{i:.4f}" for i in coco_info + [mean_loss.item()]] + [f"{lr:.6f}"]
+            result_info = [f"{i:.4f}" for i in coco_info +
+                           [mean_loss.item()]] + [f"{lr:.6f}"]
             txt = "epoch:{} {}".format(epoch, '  '.join(result_info))
             f.write(txt + "\n")
 
@@ -168,7 +178,8 @@ def main(args):
             'epoch': epoch}
         if args.amp:
             save_files["scaler"] = scaler.state_dict()
-        torch.save(save_files, "./save_weights/resNetFpn-model-{}.pth".format(epoch))
+        torch.save(
+            save_files, "./save_weights/resNetFpn-model-{}.pth".format(epoch))
 
     # plot loss and lr curve
     if len(train_loss) != 0 and len(learning_rate) != 0:
@@ -192,13 +203,17 @@ if __name__ == "__main__":
     # 训练数据集的根目录(VOCdevkit)
     parser.add_argument('--data-path', default='./', help='dataset')
     # 检测目标类别数(不包含背景)
-    parser.add_argument('--num-classes', default=20, type=int, help='num_classes')
+    parser.add_argument('--num-classes', default=20,
+                        type=int, help='num_classes')
     # 文件保存地址
-    parser.add_argument('--output-dir', default='./save_weights', help='path where to save')
+    parser.add_argument(
+        '--output-dir', default='./save_weights', help='path where to save')
     # 若需要接着上次训练，则指定上次训练保存权重文件地址
-    parser.add_argument('--resume', default='', type=str, help='resume from checkpoint')
+    parser.add_argument('--resume', default='', type=str,
+                        help='resume from checkpoint')
     # 指定接着从哪个epoch数开始训练
-    parser.add_argument('--start_epoch', default=0, type=int, help='start epoch')
+    parser.add_argument('--start_epoch', default=0,
+                        type=int, help='start epoch')
     # 训练的总epoch数
     parser.add_argument('--epochs', default=15, type=int, metavar='N',
                         help='number of total epochs to run')
@@ -218,7 +233,8 @@ if __name__ == "__main__":
                         help='batch size when training.')
     parser.add_argument('--aspect-ratio-group-factor', default=3, type=int)
     # 是否使用混合精度训练(需要GPU支持混合精度)
-    parser.add_argument("--amp", default=False, help="Use torch.cuda.amp for mixed precision training")
+    parser.add_argument("--amp", default=True,
+                        help="Use torch.cuda.amp for mixed precision training")
 
     args = parser.parse_args()
     print(args)
