@@ -195,8 +195,7 @@ def main(args):
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description=__doc__)
+    parser = argparse.ArgumentParser(description=__doc__)
 
     # 训练设备类型
     parser.add_argument('--device', default='cuda:0', help='device')

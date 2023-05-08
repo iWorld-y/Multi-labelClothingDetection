@@ -32,14 +32,16 @@ class VOCDataSet(Dataset):
             for line in read.readlines():
                 stripped_line = line.strip()
                 if len(stripped_line) > 0:
-                    file_path = os.path.join(self.annotations_root, os.path.splitext(stripped_line)[0] + ".xml")
+                    file_path = os.path.join(
+                        self.annotations_root, os.path.splitext(stripped_line)[0] + ".xml")
                     xml_list.append(file_path)
 
         self.xml_list = []
         # check file
         for xml_path in xml_list:
             if os.path.exists(xml_path) is False:
-                print(f"Warning: not found '{xml_path}', skip this annotation file.")
+                print(
+                    f"Warning: not found '{xml_path}', skip this annotation file.")
                 continue
 
             # check for targets
@@ -52,16 +54,19 @@ class VOCDataSet(Dataset):
             xml = self.load_xml(xml_path)
             data = self.parse_xml_to_dict(xml)["annotation"]
             if "object" not in data:
-                print(f"INFO: no objects in {xml_path}, skip this annotation file.")
+                print(
+                    f"INFO: no objects in {xml_path}, skip this annotation file.")
                 continue
 
             self.xml_list.append(xml_path)
 
-        assert len(self.xml_list) > 0, "in '{}' file does not find any information.".format(txt_path)
+        assert len(
+            self.xml_list) > 0, "in '{}' file does not find any information.".format(txt_path)
 
         # read class_indict
         json_file = './pascal_voc_classes.json'
-        assert os.path.exists(json_file), "{} file not exist.".format(json_file)
+        assert os.path.exists(
+            json_file), "{} file not exist.".format(json_file)
         with open(json_file, 'r') as f:
             self.class_dict = json.load(f)
 
@@ -102,7 +107,8 @@ class VOCDataSet(Dataset):
         boxes = []
         labels = []
         iscrowd = []
-        assert "object" in data, "{} lack of object information.".format(xml_path)
+        assert "object" in data, "{} lack of object information.".format(
+            xml_path)
         for obj in data["object"]:
             xmin = float(obj["bndbox"]["xmin"])
             xmax = float(obj["bndbox"]["xmax"])
@@ -111,7 +117,8 @@ class VOCDataSet(Dataset):
 
             # 进一步检查数据，有的标注信息中可能有w或h为0的情况，这样的数据会导致计算回归loss为nan
             if xmax <= xmin or ymax <= ymin:
-                print("Warning: in '{}' xml, there are some bbox w/h <=0".format(xml_path))
+                print(
+                    "Warning: in '{}' xml, there are some bbox w/h <=0".format(xml_path))
                 continue
 
             boxes.append([xmin, ymin, xmax, ymax])
@@ -186,9 +193,10 @@ class VOCDataSet(Dataset):
         """
         # read xml
         xml_path = self.xml_list[idx]
-        with open(xml_path) as fid:
-            xml_str = fid.read()
-        xml = etree.fromstring(xml_str)
+        # with open(xml_path) as fid:
+        #     xml_str = fid.read()
+        # xml = etree.fromstring(xml_str)
+        xml = self.load_xml(xml_path)
         data = self.parse_xml_to_dict(xml)["annotation"]
         data_height = int(data["size"]["height"])
         data_width = int(data["size"]["width"])
