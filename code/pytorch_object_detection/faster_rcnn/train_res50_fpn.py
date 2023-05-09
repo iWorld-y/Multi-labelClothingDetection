@@ -47,9 +47,24 @@ def main(args):
     print("Using {} device training.".format(device.type))
 
     # 用来保存coco_info的文件
-    results_file = "results{}.txt".format(
-        datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
-
+    results_file = f"results{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}.csv"
+    with open(results_file, 'a') as f:
+        # 初始化结果 csv, 先写入列名
+        row_names = ['epoch',
+                     'AP@[IoU=0.50:0.95|area=all|maxDets=100]',
+                     'AP@[IoU=0.50|area=all|maxDets=100]',
+                     'AP@[IoU=0.75|area=all|maxDets=100]',
+                     'AP@[IoU=0.50:0.95|area=small|maxDets=100]',
+                     'AP@[IoU=0.50:0.95|area=medium|maxDets=100]',
+                     'AP@[IoU=0.50:0.95|area=large|maxDets=100]',
+                     'AR@[IoU=0.50:0.95|area=all|maxDets=1]',
+                     'AR@[IoU=0.50:0.95|area=all|maxDets=10]',
+                     'AR@[IoU=0.50:0.95|area=all|maxDets=100]',
+                     'AR@[IoU=0.50:0.95|area=small|maxDets=100]',
+                     'AR@[IoU=0.50:0.95|area=medium|maxDets=100]',
+                     'AR@[IoU=0.50:0.95|area=large|maxDets=100]',
+                     'mean_loss', 'learning_rate']
+        f.write(','.join(row_names))
     data_transform = {
         "train": transforms.Compose([transforms.ToTensor(),
                                      transforms.RandomHorizontalFlip(0.5)]),
@@ -165,7 +180,8 @@ def main(args):
             # 写入的数据包括coco指标还有loss和learning rate
             result_info = [f"{i:.4f}" for i in coco_info +
                            [mean_loss.item()]] + [f"{lr:.6f}"]
-            txt = "epoch:{} {}".format(epoch, '  '.join(result_info))
+            # txt = "epoch:{} {}".format(epoch, '  '.join(result_info))
+            txt = f"epoch:{epoch},{','.join(result_info)}"
             f.write(txt + "\n")
 
         val_map.append(coco_info[1])  # pascal mAP
@@ -202,7 +218,7 @@ if __name__ == "__main__":
     # 训练数据集的根目录(VOCdevkit)
     parser.add_argument('--data-path', default='./', help='dataset')
     # 检测目标类别数(不包含背景)
-    parser.add_argument('--num-classes', default=20,
+    parser.add_argument('--num-classes', default=13,
                         type=int, help='num_classes')
     # 文件保存地址
     parser.add_argument(
