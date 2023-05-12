@@ -64,7 +64,7 @@ def main(args):
                      'AR@[IoU=0.50:0.95|area=medium|maxDets=100]',
                      'AR@[IoU=0.50:0.95|area=large|maxDets=100]',
                      'mean_loss', 'learning_rate']
-        f.write(','.join(row_names))
+        f.write(','.join(row_names) + '\n')
     data_transform = {
         "train": transforms.Compose([transforms.ToTensor(),
                                      transforms.RandomHorizontalFlip(0.5)]),

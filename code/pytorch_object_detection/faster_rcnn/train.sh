@@ -1,3 +1,2 @@
-python train_res50_fpn.py --data-path "/root/autodl-tmp/" --epochs 2 ; \
-mygit "测试训练结束" ; \
-python train_res50_fpn.py --data-path "/root/autodl-tmp/" --epochs 300 --batch_size 22  && mygit "Faster RCNN 第一次训练结束，epochs:300"; /usr/bin/shutdown
+python train_res50_fpn.py --data-path "/root/autodl-tmp/" --output-dir "/root/autodl-tmp/frcnn_2023-5-9_weights/2023-5-9_2" --epochs 20 --batch_size 16  && mygit "Faster RCNN 第 2 次训练结束，epochs=20; batch_size=16";
+#  /usr/bin/shutdown
