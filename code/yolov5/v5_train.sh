@@ -10,18 +10,20 @@ if [ -z "$message" ]; then
 fi
 
 # 运行 YOLOv5 训练脚本
-python ~/code/yolov5/train.py \
-    --batch-size 192 \
+# python ~/code/yolov5/train.py \
+python -m torch.distributed.run --nproc_per_node 2 \
+    --master_port 1 \
+    ~/code/yolov5/train.py \
+    --batch-size 384 \
     --data dataset/fashion2.yaml \
     --img 640 \
     --epochs 300 \
     --weight models/yolov5n.pt \
-    --project runs/v5 ;
+    --project runs/v5 \
+    --device 0,1 &&
 
 # 提交 Git 更改
-git add ~/code/Multi-labelClothingDetection ;
-git commit -m "$message" ;
-git push origin main ;
+mygit "$message"
 
 # 关闭计算机
 /usr/bin/shutdown

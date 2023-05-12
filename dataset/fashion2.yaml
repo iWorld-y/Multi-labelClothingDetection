@@ -1,4 +1,4 @@
-path: /root/autodl-tmp/DeepFasion2       # dataset root dir
+path: /root/autodl-tmp/DeepFashion2       # dataset root dir
 train: train
 val: validation
 # test: test
