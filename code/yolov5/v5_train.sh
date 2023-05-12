@@ -14,7 +14,7 @@ python ~/code/yolov5/train.py \
     --batch-size 192 \
     --data dataset/fashion2.yaml \
     --img 640 \
-    --epochs 100 \
+    --epochs 300 \
     --weight models/yolov5n.pt \
     --project runs/v5 ;
 
