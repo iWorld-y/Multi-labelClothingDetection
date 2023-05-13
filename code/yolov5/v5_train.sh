@@ -12,7 +12,7 @@ fi
 # 运行 YOLOv5 训练脚本
 # python ~/code/yolov5/train.py \
 python -m torch.distributed.run --nproc_per_node 2 \
-    --master_port 1 \
+    --master_port 1024 \
     ~/code/yolov5/train.py \
     --batch-size 384 \
     --data dataset/fashion2.yaml \
@@ -25,5 +25,6 @@ python -m torch.distributed.run --nproc_per_node 2 \
 # 提交 Git 更改
 mygit "$message"
 
-# 关闭计算机
-/usr/bin/shutdown
+# 关闭计算机（一分钟后）
+echo -e "\033[41m\033[37m警告：计算机将在一分钟后关闭，如果想取消请按下 Ctrl + C\033[0m"
+/usr/bin/shutdown -r +1
