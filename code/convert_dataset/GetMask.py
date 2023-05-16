@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import json
 import os
@@ -7,7 +6,8 @@ from tqdm import tqdm
 
 
 class GetMask:
-    def __init__(self, data_root_path: str, annos: str, images: str, save_path: str, is_debug: bool):
+    def __init__(self, data_root_path: str, annos: str, images: str, save_path: str, multithreading: bool,
+                 is_debug: bool):
         """
         :param data_root_path: 数据集根目录
         :param annos: 原始标注文件
@@ -17,6 +17,7 @@ class GetMask:
         self.annos = os.path.join(self.data_root_path, annos)
         self.images = os.path.join(self.data_root_path, images)
         self.save_path = save_path
+        self.multithreading = multithreading
         self.is_debug = is_debug
 
     def get_image(self, image_num: str) -> np.ndarray:
@@ -25,7 +26,8 @@ class GetMask:
         :param image_num: 图片号码
         :return: 返回包含图片数据的 np.ndarray
         """
-        return plt.imread(os.path.join(self.images, f"{image_num:06d}.jpg"))
+        # return plt.imread(os.path.join(self.images, f"{image_num:06d}.jpg"))
+        return cv2.imread(os.path.join(self.images, f"{image_num:06d}.jpg"))
 
     def get_image_json(self, image_num: str) -> dict:
         """
@@ -60,11 +62,13 @@ class GetMask:
             mask_color = colors[color_cnt]
             color_cnt = (color_cnt + 1) % colors_size
             # 获取一系列多边形
+
             arrs = image_json[item_key]["segmentation"]
             for arr in arrs:
                 # 对当前物体的分割点所连成的多边形进行处理
                 pts = np.array([[arr[i], arr[i + 1]] for i in range(0, len(arr), 2)]).astype(int)
                 cv2.fillPoly(black_bg, [pts], mask_color)
+                cv2.polylines(black_bg, [pts], True, (255, 255, 255))
         return black_bg
 
     def count_images(self) -> int:
@@ -73,7 +77,7 @@ class GetMask:
         """
         return len(os.listdir(self.images))
 
-    def save_images(self):
+    def do_convert(self):
         if (self.is_debug):
             for image_num in tqdm(range(1, 11)):
                 cv2.imwrite(os.path.join(self.save_path, f"{image_num:06d}.png"), self.get_mask(image_num))
@@ -91,12 +95,17 @@ if __name__ == "__main__":
     parser.add_argument("--annos", type=str, default="annos", help="图片信息所在目录")
     parser.add_argument("--images", type=str, default="image", help="图片目录名称")
     parser.add_argument("--save", type=str, help="掩膜保存目录")
+    parser.add_argument("--multithreading", action="store_false", help="是否开启多线程")
     parser.add_argument("--debug", action="store_true", help="掩膜保存目录")
 
     args = parser.parse_args()
-    getMask = GetMask(data_root_path=args.data,
-                      annos=args.annos,
-                      images=args.images,
-                      save_path=args.save,
-                      is_debug=args.debug)
-    getMask.save_images()
+    GetMask(
+        data_root_path=args.data,
+        annos=args.annos,
+        images=args.images,
+        save_path=args.save,
+        multithreading=args.multithreading,
+        is_debug=args.debug
+    ).do_convert()
+    # TODO：掩膜边缘改为白色线条
+    # TODO：多线程处理
