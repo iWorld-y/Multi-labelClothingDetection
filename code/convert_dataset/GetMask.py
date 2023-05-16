@@ -1,5 +1,3 @@
-import threading
-
 import numpy as np
 import json
 import os
@@ -21,8 +19,6 @@ class GetMask:
         self.save_path = save_path
         self.is_multithreading = is_multithreading
         self.is_debug = is_debug
-        if (self.multithreading):
-            import threading
 
     def get_image(self, image_num: str) -> np.ndarray:
         """
@@ -90,6 +86,7 @@ class GetMask:
             self.save_mask(i)
 
     def multithreading(self):
+        import threading
         threads = []
         # 图片总数
         if (self.is_debug):
@@ -134,7 +131,7 @@ if __name__ == "__main__":
     parser.add_argument("--images", type=str, default="image", help="图片目录名称")
     parser.add_argument("--save", type=str, help="掩膜保存目录")
     parser.add_argument("--multithreading", action="store_true", help="是否开启多线程")
-    parser.add_argument("--debug", action="store_true", help="掩膜保存目录")
+    parser.add_argument("--debug", action="store_true", help="是否开启 debug")
 
     args = parser.parse_args()
     GetMask(
@@ -145,4 +142,3 @@ if __name__ == "__main__":
         is_multithreading=args.multithreading,
         is_debug=args.debug
     ).do_convert()
-    # TODO：多线程处理
