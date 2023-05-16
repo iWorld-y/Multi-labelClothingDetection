@@ -94,7 +94,7 @@ class GetMask:
         else:
             images_num = self.count_images()
         # 线程数
-        threads_num = 5
+        threads_num = 10
         offset = images_num // threads_num
         start = 1
         end = start + offset

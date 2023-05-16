@@ -15,7 +15,8 @@ class XmlEditor:
         self.save_path = save_path if save_path else self.xmls_path
 
     def editor(self, this_xml: int) -> None:
-        assert isinstance(this_xml, int), f"this_xml 必须为正数！\t实际类型：{type(this_xml)}\t其值为: {this_xml}"
+        assert isinstance(
+            this_xml, int), f"this_xml 必须为正数！\t实际类型：{type(this_xml)}\t其值为: {this_xml}"
         tree = ET.parse(os.path.join(self.xmls_path, f"{this_xml:06d}.xml"))
         root = tree.getroot()
         seg = ET.SubElement(root, "segmented")
@@ -55,5 +56,5 @@ if __name__ in "__main__":
     parser.add_argument("--path", type=str, help="Xml 所在目录")
     parser.add_argument("--save", type=str, help="Xml 保存目录")
     args = parser.parse_args()
-
+    assert args.path, f"args.path 为必填参数"
     XmlEditor(args.path, args.save).multithreading()

@@ -10,15 +10,23 @@ from train_utils import convert_to_coco_api
 
 
 class VOCInstances(Dataset):
-    def __init__(self, voc_root, year="2012", txt_name: str = "train.txt", transforms=None):
+    # def __init__(self, voc_root, year="2012", txt_name: str = "train.txt", transforms=None):
+    def __init__(self, voc_root, txt_name: str = "train.txt", transforms=None):
+        """
+        Args:
+            voc_root: 其子目录需要为 "Annotations", "ImageSets", "JPEGImages"
+            txt_name:
+            transforms:
+        """
         super().__init__()
-        if isinstance(year, int):
-            year = str(year)
-        assert year in ["2007", "2012"], "year must be in ['2007', '2012']"
-        if "VOCdevkit" in voc_root:
-            root = os.path.join(voc_root, f"VOC{year}")
-        else:
-            root = os.path.join(voc_root, "VOCdevkit", f"VOC{year}")
+        # if isinstance(year, int):
+        #     year = str(year)
+        # assert year in ["2007", "2012"], "year must be in ['2007', '2012']"
+        # if "VOCdevkit" in voc_root:
+        #     root = os.path.join(voc_root, f"VOC{year}")
+        # else:
+        #     root = os.path.join(voc_root, "VOCdevkit", f"VOC{year}")
+        root = os.path.join(voc_root)
         assert os.path.exists(root), "path '{}' does not exist.".format(root)
         image_dir = os.path.join(root, 'JPEGImages')
         xml_dir = os.path.join(root, 'Annotations')
@@ -36,12 +44,12 @@ class VOCInstances(Dataset):
             idx2classes = json.load(f)
             self.class_dict = dict([(v, k) for k, v in idx2classes.items()])
 
-        self.images_path = []     # 存储图片路径
-        self.xmls_path = []       # 存储xml文件路径
-        self.xmls_info = []       # 存储解析的xml字典文件
-        self.masks_path = []      # 存储SegmentationObject图片路径
+        self.images_path = []  # 存储图片路径
+        self.xmls_path = []  # 存储xml文件路径
+        self.xmls_info = []  # 存储解析的xml字典文件
+        self.masks_path = []  # 存储SegmentationObject图片路径
         self.objects_bboxes = []  # 存储解析的目标boxes等信息
-        self.masks = []           # 存储读取的SegmentationObject图片信息
+        self.masks = []  # 存储读取的SegmentationObject图片信息
 
         # 检查图片、xml文件以及mask是否都在
         images_path = [os.path.join(image_dir, x + ".jpg") for x in file_names]
@@ -87,7 +95,7 @@ class VOCInstances(Dataset):
         c = mask.max()  # 有几个目标最大索引就等于几
         masks = []
         # 对每个目标的mask单独使用一个channel存放
-        for i in range(1, c+1):
+        for i in range(1, c + 1):
             masks.append(mask == i)
         masks = np.stack(masks, axis=0)
         return torch.as_tensor(masks, dtype=torch.uint8)

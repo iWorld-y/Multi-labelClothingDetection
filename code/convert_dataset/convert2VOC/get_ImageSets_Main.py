@@ -7,7 +7,7 @@ import os
 import getpass
 
 
-def main():
+def main(save: str):
     username = getpass.getuser()
     if (username == 'root'):
         root_path = r'/root/autodl-tmp/VOC_DeepFashion2/'
@@ -18,16 +18,16 @@ def main():
     val_images_path = os.path.join(root_path, 'JPEGImages', "val")
 
     # 获取 train 图像文件名列表，写入 train.txt 文件中
-    with open(os.path.join(root_path, 'ImageSets/Main/train.txt'), 'w') as f, open(
-            os.path.join(root_path, 'ImageSets/Main/trainval.txt'), 'w') as f2:
+    with open(os.path.join(root_path, f'ImageSets/{save}/train.txt'), 'w') as f, open(
+            os.path.join(root_path, f'ImageSets/{save}/trainval.txt'), 'w') as f2:
         for name in sorted(os.listdir(train_images_path)):
             if os.path.splitext(name)[-1].lower() in ['.jpg', '.jpeg', '.png']:
                 f.write(name + '\n')
                 f2.write(name + '\n')
 
     # 获取 validation 图像文件名列表，写入 val.txt 文件中
-    with open(os.path.join(root_path, 'ImageSets/Main/val.txt'), 'w') as f, open(
-            os.path.join(root_path, 'ImageSets/Main/trainval.txt'), 'a') as f2:
+    with open(os.path.join(root_path, f'ImageSets/{save}/val.txt'), 'w') as f, open(
+            os.path.join(root_path, f'ImageSets/{save}/trainval.txt'), 'a') as f2:
         for name in sorted(os.listdir(val_images_path)):
             if os.path.splitext(name)[-1].lower() in ['.jpg', '.jpeg', '.png']:
                 f.write(name + '\n')
@@ -35,4 +35,10 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--save", type=str,
+                        help="ImageSets 下的路径，Main or Segmentation")
+    args = parser.parse_args
+    assert args.save, "--save 不可空"
+    main(args.save)
