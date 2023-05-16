@@ -117,7 +117,6 @@ class GetMask:
             self.multithreading()
         else:
             for image_num in tqdm(range(self.count_images())):
-                # cv2.imwrite(os.path.join(self.save_path, f"{image_num:06d}.png"), self.get_mask(image_num))
                 self.save_mask(image_num)
 
 
