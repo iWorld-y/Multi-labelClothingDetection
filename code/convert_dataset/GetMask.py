@@ -1,3 +1,5 @@
+import threading
+
 import numpy as np
 import json
 import os
@@ -6,7 +8,7 @@ from tqdm import tqdm
 
 
 class GetMask:
-    def __init__(self, data_root_path: str, annos: str, images: str, save_path: str, multithreading: bool,
+    def __init__(self, data_root_path: str, annos: str, images: str, save_path: str, is_multithreading: bool,
                  is_debug: bool):
         """
         :param data_root_path: 数据集根目录
@@ -17,8 +19,10 @@ class GetMask:
         self.annos = os.path.join(self.data_root_path, annos)
         self.images = os.path.join(self.data_root_path, images)
         self.save_path = save_path
-        self.multithreading = multithreading
+        self.is_multithreading = is_multithreading
         self.is_debug = is_debug
+        if (self.multithreading):
+            import threading
 
     def get_image(self, image_num: str) -> np.ndarray:
         """
@@ -77,13 +81,47 @@ class GetMask:
         """
         return len(os.listdir(self.images))
 
-    def do_convert(self):
+    def save_mask(self, image_num: int) -> None:
+        assert isinstance(image_num, int), f"image_num 必须为正数！\t实际类型：{type(image_num)}\t其值为: {image_num}"
+        cv2.imwrite(os.path.join(self.save_path, f"{image_num:06d}.png"), self.get_mask(image_num))
+
+    def multithreading_save_mask(self, start: int, end: int):
+        for i in tqdm(range(start, end + 1)):
+            self.save_mask(i)
+
+    def multithreading(self):
+        threads = []
+        # 图片总数
         if (self.is_debug):
+            images_num = 1024
+        else:
+            images_num = self.count_images()
+        # 线程数
+        threads_num = 5
+        offset = images_num // threads_num
+        start = 1
+        end = start + offset
+        for i in range(threads_num):
+            while (start <= images_num):
+                t = threading.Thread(target=self.multithreading_save_mask, args=(start, end))
+                threads.append(t)
+                t.start()
+                print(f"{start} ~ {end}")
+                start = end + 1
+                end = start + offset if (start + offset <= images_num) else images_num
+        for t in threads:
+            t.join()
+
+    def do_convert(self):
+        if (self.is_debug and (not self.is_multithreading)):
             for image_num in tqdm(range(1, 11)):
-                cv2.imwrite(os.path.join(self.save_path, f"{image_num:06d}.png"), self.get_mask(image_num))
-            return
-        for image_num in tqdm(range(self.count_images())):
-            cv2.imwrite(os.path.join(self.save_path, f"{image_num:06d}.png"), self.get_mask(image_num))
+                self.save_mask(image_num)
+        elif (self.is_multithreading):
+            self.multithreading()
+        else:
+            for image_num in tqdm(range(self.count_images())):
+                # cv2.imwrite(os.path.join(self.save_path, f"{image_num:06d}.png"), self.get_mask(image_num))
+                self.save_mask(image_num)
 
 
 if __name__ == "__main__":
@@ -95,7 +133,7 @@ if __name__ == "__main__":
     parser.add_argument("--annos", type=str, default="annos", help="图片信息所在目录")
     parser.add_argument("--images", type=str, default="image", help="图片目录名称")
     parser.add_argument("--save", type=str, help="掩膜保存目录")
-    parser.add_argument("--multithreading", action="store_false", help="是否开启多线程")
+    parser.add_argument("--multithreading", action="store_true", help="是否开启多线程")
     parser.add_argument("--debug", action="store_true", help="掩膜保存目录")
 
     args = parser.parse_args()
@@ -104,8 +142,7 @@ if __name__ == "__main__":
         annos=args.annos,
         images=args.images,
         save_path=args.save,
-        multithreading=args.multithreading,
+        is_multithreading=args.multithreading,
         is_debug=args.debug
     ).do_convert()
-    # TODO：掩膜边缘改为白色线条
     # TODO：多线程处理
