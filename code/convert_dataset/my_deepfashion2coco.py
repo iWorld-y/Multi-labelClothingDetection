@@ -65,13 +65,24 @@ def change_points(points, left, rigth, points_x, points_y, points_v):
 
 
 def get_annotation(dataset_path: str, dataset: dict, dataType: str) -> dict:
-    num_images = len(os.listdir(f"{dataset_path}/{dataType}/image/"))
-    sub_index = 0  # the index of ground truth instance
+    if (os.path.exists(os.path.join(dataset_path, dataType, "image"))):
+        num_images = len(os.listdir(
+            os.path.join(dataset_path, dataType, "image")))
+        image_file_name = "image"
+    else:
+        num_images = len(os.listdir(os.path.join(
+            dataset_path, dataType, "images")))
+        image_file_name = "images"
+    sub_index = 0
+    # the index of ground truth instance
     if (dataset_path[-1] == '/'):
         dataset_path = dataset_path[:-1]
-    for num in tqdm(range(1, num_images + 1)):
-        json_name = f"{dataset_path}/{dataType}/annos/{str(num).zfill(6)}.json"
-        image_name = f"{dataset_path}/{dataType}/image/{str(num).zfill(6)}.jpg"
+    print(f"{dataType}:\t{num_images}")
+    for num in tqdm(range(1, num_images)):
+        json_name = os.path.join(
+            dataset_path, dataType, "annos", f"{num:06d}.json")
+        image_name = os.path.join(
+            dataset_path, dataType, image_file_name, f"{num:06d}.jpg")
 
         if (num >= 0):
             imag = Image.open(image_name)
@@ -108,31 +119,44 @@ def get_annotation(dataset_path: str, dataset: dict, dataType: str) -> dict:
                         points_v = np.array(points_v)
 
                         if cat == 1:
-                            points = change_points(points, 0, 25, points_x, points_y, points_v)
+                            points = change_points(
+                                points, 0, 25, points_x, points_y, points_v)
                         elif cat == 2:
-                            points = change_points(points, 25, 58, points_x, points_y, points_v)
+                            points = change_points(
+                                points, 25, 58, points_x, points_y, points_v)
                         elif cat == 3:
-                            points = change_points(points, 58, 89, points_x, points_y, points_v)
+                            points = change_points(
+                                points, 58, 89, points_x, points_y, points_v)
                         elif cat == 4:
-                            points = change_points(points, 89, 128, points_x, points_y, points_v)
+                            points = change_points(
+                                points, 89, 128, points_x, points_y, points_v)
                         elif cat == 5:
-                            points = change_points(points, 128, 143, points_x, points_y, points_v)
+                            points = change_points(
+                                points, 128, 143, points_x, points_y, points_v)
                         elif cat == 6:
-                            points = change_points(points, 143, 158, points_x, points_y, points_v)
+                            points = change_points(
+                                points, 143, 158, points_x, points_y, points_v)
                         elif cat == 7:
-                            points = change_points(points, 158, 168, points_x, points_y, points_v)
+                            points = change_points(
+                                points, 158, 168, points_x, points_y, points_v)
                         elif cat == 8:
-                            points = change_points(points, 168, 182, points_x, points_y, points_v)
+                            points = change_points(
+                                points, 168, 182, points_x, points_y, points_v)
                         elif cat == 9:
-                            points = change_points(points, 182, 190, points_x, points_y, points_v)
+                            points = change_points(
+                                points, 182, 190, points_x, points_y, points_v)
                         elif cat == 10:
-                            points = change_points(points, 190, 219, points_x, points_y, points_v)
+                            points = change_points(
+                                points, 190, 219, points_x, points_y, points_v)
                         elif cat == 11:
-                            points = change_points(points, 219, 256, points_x, points_y, points_v)
+                            points = change_points(
+                                points, 219, 256, points_x, points_y, points_v)
                         elif cat == 12:
-                            points = change_points(points, 256, 275, points_x, points_y, points_v)
+                            points = change_points(
+                                points, 256, 275, points_x, points_y, points_v)
                         elif cat == 13:
-                            points = change_points(points, 275, 294, points_x, points_y, points_v)
+                            points = change_points(
+                                points, 275, 294, points_x, points_y, points_v)
                         num_points = len(np.where(points_v > 0)[0])
 
                         dataset['annotations'].append({
@@ -145,11 +169,18 @@ def get_annotation(dataset_path: str, dataset: dict, dataType: str) -> dict:
 def main(path: str):
     for dataType in ["train", "validation"]:
         dataset = get_annotation(path, get_dataset(), dataType)
-        json_name = {"train": "./train.json", "validation": "./valid.json"}[dataType]
-        with open(fr"{path}\{json_name}", 'w') as f:
+        json_name = {"train": "./train.json",
+                     "validation": "./valid.json"}[dataType]
+        with open(os.path.join(path, json_name), 'w') as f:
             json.dump(dataset, f)
 
 
 if __name__ == '__main__':
-    path = 'E:\BaiduNetdiskDownload\Deepfashion2\Deepfashion2'
-    main(path)
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--path", type=str, help="DeepFashion2 根目录")
+    args = parser.parse_args()
+
+    assert args.path, "--path 为必填"
+    main(args.path)

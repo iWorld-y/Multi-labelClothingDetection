@@ -33,17 +33,21 @@ class VOCInstances(Dataset):
         mask_dir = os.path.join(root, 'SegmentationObject')
 
         txt_path = os.path.join(root, "ImageSets", "Segmentation", txt_name)
-        assert os.path.exists(txt_path), "file '{}' does not exist.".format(txt_path)
+        assert os.path.exists(
+            txt_path), "file '{}' does not exist.".format(txt_path)
         with open(os.path.join(txt_path), "r") as f:
-            file_names = [x.strip() for x in f.readlines() if len(x.strip()) > 0]
+            file_names = [os.path.splitext(x.strip())[0]
+                          for x in f.readlines() if len(x.strip()) > 0]
 
         # read class_indict
         json_file = 'pascal_voc_indices.json'
-        assert os.path.exists(json_file), "{} file not exist.".format(json_file)
+        assert os.path.exists(
+            json_file), "{} file not exist.".format(json_file)
         with open(json_file, 'r') as f:
             idx2classes = json.load(f)
-            self.class_dict = dict([(v, k) for k, v in idx2classes.items()])
-
+            # self.class_dict = dict([(v, k) for k, v in idx2classes.items()])
+            self.class_dict = dict([(k, v) for k, v in idx2classes.items()])
+            print(self.class_dict)
         self.images_path = []  # 存储图片路径
         self.xmls_path = []  # 存储xml文件路径
         self.xmls_info = []  # 存储解析的xml字典文件
@@ -65,13 +69,15 @@ class VOCInstances(Dataset):
                 xml_str = fid.read()
             xml = etree.fromstring(xml_str)
             obs_dict = parse_xml_to_dict(xml)["annotation"]  # 将xml文件解析成字典
-            obs_bboxes = parse_objects(obs_dict, xml_path, self.class_dict, idx)  # 解析出目标信息
+            obs_bboxes = parse_objects(
+                obs_dict, xml_path, self.class_dict, idx)  # 解析出目标信息
             num_objs = obs_bboxes["boxes"].shape[0]
 
             # 读取SegmentationObject并检查是否和bboxes信息数量一致
             instances_mask = Image.open(mask_path)
             instances_mask = np.array(instances_mask)
-            instances_mask[instances_mask == 255] = 0  # 255为背景或者忽略掉的地方，这里为了方便直接设置为背景(0)
+            # 255为背景或者忽略掉的地方，这里为了方便直接设置为背景(0)
+            instances_mask[instances_mask == 255] = 0
 
             # 需要检查一下标注的bbox个数是否和instances个数一致
             num_instances = instances_mask.max()

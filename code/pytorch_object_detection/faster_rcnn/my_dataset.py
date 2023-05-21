@@ -193,17 +193,10 @@ class VOCDataSet(Dataset):
         """
         # read xml
         xml_path = self.xml_list[idx]
-        # with open(xml_path) as fid:
-        #     xml_str = fid.read()
-        # xml = etree.fromstring(xml_str)
         xml = self.load_xml(xml_path)
         data = self.parse_xml_to_dict(xml)["annotation"]
         data_height = int(data["size"]["height"])
         data_width = int(data["size"]["width"])
-        # img_path = os.path.join(self.img_root, data["filename"])
-        # image = Image.open(img_path)
-        # if image.format != "JPEG":
-        #     raise ValueError("Image format not JPEG")
         boxes = []
         labels = []
         iscrowd = []

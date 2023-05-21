@@ -9,7 +9,6 @@ from tqdm import tqdm
 root_path = r"/root/autodl-tmp/DeepFashion2"
 train_data_path = fr"{root_path}/train"
 vaild_data_path = fr"{root_path}/validation"
-test_data_path = fr"{root_path}/test"
 data_path = vaild_data_path
 
 

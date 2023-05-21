@@ -19,7 +19,8 @@ def create_model(num_classes=21):
     # https://ngc.nvidia.com/catalog/models -> search ssd -> download FP32
     pre_ssd_path = "./src/nvidia_ssdpyt_fp32.pt"
     if os.path.exists(pre_ssd_path) is False:
-        raise FileNotFoundError("nvidia_ssdpyt_fp32.pt not find in {}".format(pre_ssd_path))
+        raise FileNotFoundError(
+            "nvidia_ssdpyt_fp32.pt not find in {}".format(pre_ssd_path))
     pre_model_dict = torch.load(pre_ssd_path, map_location='cpu')
     pre_weights_dict = pre_model_dict["model"]
 
@@ -31,7 +32,8 @@ def create_model(num_classes=21):
             continue
         del_conf_loc_dict.update({k: v})
 
-    missing_keys, unexpected_keys = model.load_state_dict(del_conf_loc_dict, strict=False)
+    missing_keys, unexpected_keys = model.load_state_dict(
+        del_conf_loc_dict, strict=False)
     if len(missing_keys) != 0 or len(unexpected_keys) != 0:
         print("missing_keys: ", missing_keys)
         print("unexpected_keys: ", unexpected_keys)
@@ -40,13 +42,34 @@ def create_model(num_classes=21):
 
 
 def main(parser_data):
-    device = torch.device(parser_data.device if torch.cuda.is_available() else "cpu")
+    device = torch.device(
+        parser_data.device if torch.cuda.is_available() else "cpu")
     print("Using {} device training.".format(device.type))
 
     if not os.path.exists("save_weights"):
         os.mkdir("save_weights")
 
-    results_file = "results{}.txt".format(datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+    results_file = "results{}.txt".format(
+        datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+    with open(results_file, 'a') as f:
+        # 初始化结果 csv, 先写入列名
+        row_names = ['epoch',
+                     'AP@[IoU=0.50:0.95|area=all|maxDets=100]',
+                     'AP@[IoU=0.50|area=all|maxDets=100]',
+                     'AP@[IoU=0.75|area=all|maxDets=100]',
+                     'AP@[IoU=0.50:0.95|area=small|maxDets=100]',
+                     'AP@[IoU=0.50:0.95|area=medium|maxDets=100]',
+                     'AP@[IoU=0.50:0.95|area=large|maxDets=100]',
+                     'AR@[IoU=0.50:0.95|area=all|maxDets=1]',
+                     'AR@[IoU=0.50:0.95|area=all|maxDets=10]',
+                     'AR@[IoU=0.50:0.95|area=all|maxDets=100]',
+                     'AR@[IoU=0.50:0.95|area=small|maxDets=100]',
+                     'AR@[IoU=0.50:0.95|area=medium|maxDets=100]',
+                     'AR@[IoU=0.50:0.95|area=large|maxDets=100]',
+                     'mean_loss', 'learning_rate']
+        f.write(','.join(row_names) + '\n')
+    # Data loading code
+    print("Loading data")
 
     data_transform = {
         "train": transforms.Compose([transforms.SSDCropping(),
@@ -63,17 +86,21 @@ def main(parser_data):
 
     VOC_root = parser_data.data_path
     # check voc root
-    if os.path.exists(os.path.join(VOC_root, "VOCdevkit")) is False:
-        raise FileNotFoundError("VOCdevkit dose not in path:'{}'.".format(VOC_root))
+    # if os.path.exists(os.path.join(VOC_root, "VOCdevkit")) is False:
+    if os.path.exists(os.path.join(VOC_root)) is False:
+        raise FileNotFoundError(
+            "VOCdevkit dose not in path:'{}'.".format(VOC_root))
 
     # VOCdevkit -> VOC2012 -> ImageSets -> Main -> train.txt
-    train_dataset = VOCDataSet(VOC_root, "2012", data_transform['train'], train_set='train.txt')
+    train_dataset = VOCDataSet(
+        VOC_root, data_transform["train"], train_set='train.txt')
     # 注意训练时，batch_size必须大于1
     batch_size = parser_data.batch_size
     assert batch_size > 1, "batch size must be greater than 1"
     # 防止最后一个batch_size=1，如果最后一个batch_size=1就舍去
     drop_last = True if len(train_dataset) % batch_size == 1 else False
-    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
+    # number of workers
+    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])
     print('Using %g dataloader workers' % nw)
     train_data_loader = torch.utils.data.DataLoader(train_dataset,
                                                     batch_size=batch_size,
@@ -83,7 +110,8 @@ def main(parser_data):
                                                     drop_last=drop_last)
 
     # VOCdevkit -> VOC2012 -> ImageSets -> Main -> val.txt
-    val_dataset = VOCDataSet(VOC_root, "2012", data_transform['val'], train_set='val.txt')
+    val_dataset = VOCDataSet(
+        VOC_root, data_transform["val"], train_set='val.txt')
     val_data_loader = torch.utils.data.DataLoader(val_dataset,
                                                   batch_size=batch_size,
                                                   shuffle=False,
@@ -109,7 +137,8 @@ def main(parser_data):
         optimizer.load_state_dict(checkpoint['optimizer'])
         lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
         parser_data.start_epoch = checkpoint['epoch'] + 1
-        print("the training process from epoch{}...".format(parser_data.start_epoch))
+        print("the training process from epoch{}...".format(
+            parser_data.start_epoch))
 
     train_loss = []
     learning_rate = []
@@ -134,8 +163,9 @@ def main(parser_data):
         # write into txt
         with open(results_file, "a") as f:
             # 写入的数据包括coco指标还有loss和learning rate
-            result_info = [str(round(i, 4)) for i in coco_info + [mean_loss.item()]] + [str(round(lr, 6))]
-            txt = "epoch:{} {}".format(epoch, '  '.join(result_info))
+            result_info = [str(round(i, 4)) for i in coco_info +
+                           [mean_loss.item()]] + [str(round(lr, 6))]
+            txt = "epoch:{} {}".format(epoch, ','.join(result_info))
             f.write(txt + "\n")
 
         val_map.append(coco_info[1])  # pascal mAP
@@ -172,20 +202,24 @@ if __name__ == '__main__':
     # 训练设备类型
     parser.add_argument('--device', default='cuda:0', help='device')
     # 检测的目标类别个数，不包括背景
-    parser.add_argument('--num_classes', default=20, type=int, help='num_classes')
+    parser.add_argument('--num_classes', default=13,
+                        type=int, help='num_classes')
     # 训练数据集的根目录(VOCdevkit)
     parser.add_argument('--data-path', default='./', help='dataset')
     # 文件保存地址
-    parser.add_argument('--output-dir', default='./save_weights', help='path where to save')
+    parser.add_argument(
+        '--output-dir', default='./save_weights', help='path where to save')
     # 若需要接着上次训练，则指定上次训练保存权重文件地址
-    parser.add_argument('--resume', default='', type=str, help='resume from checkpoint')
+    parser.add_argument('--resume', default='', type=str,
+                        help='resume from checkpoint')
     # 指定接着从哪个epoch数开始训练
-    parser.add_argument('--start_epoch', default=0, type=int, help='start epoch')
+    parser.add_argument('--start_epoch', default=0,
+                        type=int, help='start epoch')
     # 训练的总epoch数
     parser.add_argument('--epochs', default=15, type=int, metavar='N',
                         help='number of total epochs to run')
     # 训练的batch size
-    parser.add_argument('--batch_size', default=4, type=int, metavar='N',
+    parser.add_argument('--batch-size', default=4, type=int, metavar='N',
                         help='batch size when training.')
 
     args = parser.parse_args()
