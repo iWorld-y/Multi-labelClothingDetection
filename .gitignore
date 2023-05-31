@@ -5,4 +5,6 @@ code/pytorch_object_detection/faster_rcnn/backbone/*.pth
 */__pycache__/
 **/__pycache__/
 *.pth
+*.pt
 **/.ipynb_checkpoints
+events.*

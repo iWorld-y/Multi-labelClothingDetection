@@ -1,0 +1,26 @@
+# COCO 2017 dataset http://cocodataset.org
+train: /root/autodl-tmp/COCO_ROOT/images/train2017 # 191961 images
+val: /root/autodl-tmp/COCO_ROOT/images/val2017 # 32152 images
+anno_path: /root/autodl-tmp/COCO_ROOT/annotations/instances_val2017.json
+
+# number of classes
+nc: 13
+# whether it is coco dataset, only coco dataset should be set to True.
+is_coco: True
+
+# class names
+names: [
+    "short sleeve top",
+    "long sleeve top",
+    "short sleeve outwear",
+    "long sleeve outwear",
+    "vest",
+    "sling",
+    "shorts",
+    "trousers",
+    "skirt",
+    "short sleeve dress",
+    "long sleeve dress",
+    "vest dress",
+    "sling dress",
+  ] # class names

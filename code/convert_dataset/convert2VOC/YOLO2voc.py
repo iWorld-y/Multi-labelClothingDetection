@@ -122,8 +122,8 @@ def makexml(picPath: str, txtPath: str, xmlPath: str) -> None:
             annotation.appendChild(object)  # object标签结束
 
         f = open(xmlPath + name[0:-4] + ".xml", 'w')
-        xmlBuilder.writexml(f, indent='\t', newl='\n',
-                            addindent='\t', encoding='utf-8')
+        xmlBuilder.writexml_no_declaration(f, indent='\t', newl='\n',
+                                           addindent='\t', encoding='utf-8')
         f.close()
 
 
@@ -140,7 +140,8 @@ def main():
         dataset_path = rf'/root/autodl-tmp/DeepFashion2'
     else:
         dataset_path = rf'/home/{username}/autodl-tmp/DeepFashion2'
-    dataset_kinds = ["train", "validation"]
+    # dataset_kinds = ["train", "validation"]
+    dataset_kinds = ["train", ]
     picPath = "images/"  # 图片所在文件夹路径，后面的/一定要带上
     txtPath = "labels/"  # txt所在文件夹路径，后面的/一定要带上
     xmlPath = "annotations/"  # xml文件保存路径，后面的/一定要带上

@@ -10,38 +10,50 @@ from train_utils import convert_to_coco_api
 
 
 class VOCInstances(Dataset):
-    def __init__(self, voc_root, year="2012", txt_name: str = "train.txt", transforms=None):
+    # def __init__(self, voc_root, year="2012", txt_name: str = "train.txt", transforms=None):
+    def __init__(self, voc_root, txt_name: str = "train.txt", transforms=None):
+        """
+        Args:
+            voc_root: 其子目录需要为 "Annotations", "ImageSets", "JPEGImages"
+            txt_name:
+            transforms:
+        """
         super().__init__()
-        if isinstance(year, int):
-            year = str(year)
-        assert year in ["2007", "2012"], "year must be in ['2007', '2012']"
-        if "VOCdevkit" in voc_root:
-            root = os.path.join(voc_root, f"VOC{year}")
-        else:
-            root = os.path.join(voc_root, "VOCdevkit", f"VOC{year}")
+        # if isinstance(year, int):
+        #     year = str(year)
+        # assert year in ["2007", "2012"], "year must be in ['2007', '2012']"
+        # if "VOCdevkit" in voc_root:
+        #     root = os.path.join(voc_root, f"VOC{year}")
+        # else:
+        #     root = os.path.join(voc_root, "VOCdevkit", f"VOC{year}")
+        root = os.path.join(voc_root)
         assert os.path.exists(root), "path '{}' does not exist.".format(root)
         image_dir = os.path.join(root, 'JPEGImages')
         xml_dir = os.path.join(root, 'Annotations')
         mask_dir = os.path.join(root, 'SegmentationObject')
 
         txt_path = os.path.join(root, "ImageSets", "Segmentation", txt_name)
-        assert os.path.exists(txt_path), "file '{}' does not exist.".format(txt_path)
+        assert os.path.exists(
+            txt_path), "file '{}' does not exist.".format(txt_path)
         with open(os.path.join(txt_path), "r") as f:
-            file_names = [x.strip() for x in f.readlines() if len(x.strip()) > 0]
+            file_names = [os.path.splitext(x.strip())[0]
+                          for x in f.readlines() if len(x.strip()) > 0]
 
         # read class_indict
         json_file = 'pascal_voc_indices.json'
-        assert os.path.exists(json_file), "{} file not exist.".format(json_file)
+        assert os.path.exists(
+            json_file), "{} file not exist.".format(json_file)
         with open(json_file, 'r') as f:
             idx2classes = json.load(f)
-            self.class_dict = dict([(v, k) for k, v in idx2classes.items()])
-
-        self.images_path = []     # 存储图片路径
-        self.xmls_path = []       # 存储xml文件路径
-        self.xmls_info = []       # 存储解析的xml字典文件
-        self.masks_path = []      # 存储SegmentationObject图片路径
+            # self.class_dict = dict([(v, k) for k, v in idx2classes.items()])
+            self.class_dict = dict([(k, v) for k, v in idx2classes.items()])
+            print(self.class_dict)
+        self.images_path = []  # 存储图片路径
+        self.xmls_path = []  # 存储xml文件路径
+        self.xmls_info = []  # 存储解析的xml字典文件
+        self.masks_path = []  # 存储SegmentationObject图片路径
         self.objects_bboxes = []  # 存储解析的目标boxes等信息
-        self.masks = []           # 存储读取的SegmentationObject图片信息
+        self.masks = []  # 存储读取的SegmentationObject图片信息
 
         # 检查图片、xml文件以及mask是否都在
         images_path = [os.path.join(image_dir, x + ".jpg") for x in file_names]
@@ -57,13 +69,15 @@ class VOCInstances(Dataset):
                 xml_str = fid.read()
             xml = etree.fromstring(xml_str)
             obs_dict = parse_xml_to_dict(xml)["annotation"]  # 将xml文件解析成字典
-            obs_bboxes = parse_objects(obs_dict, xml_path, self.class_dict, idx)  # 解析出目标信息
+            obs_bboxes = parse_objects(
+                obs_dict, xml_path, self.class_dict, idx)  # 解析出目标信息
             num_objs = obs_bboxes["boxes"].shape[0]
 
             # 读取SegmentationObject并检查是否和bboxes信息数量一致
             instances_mask = Image.open(mask_path)
             instances_mask = np.array(instances_mask)
-            instances_mask[instances_mask == 255] = 0  # 255为背景或者忽略掉的地方，这里为了方便直接设置为背景(0)
+            # 255为背景或者忽略掉的地方，这里为了方便直接设置为背景(0)
+            instances_mask[instances_mask == 255] = 0
 
             # 需要检查一下标注的bbox个数是否和instances个数一致
             num_instances = instances_mask.max()
@@ -87,7 +101,7 @@ class VOCInstances(Dataset):
         c = mask.max()  # 有几个目标最大索引就等于几
         masks = []
         # 对每个目标的mask单独使用一个channel存放
-        for i in range(1, c+1):
+        for i in range(1, c + 1):
             masks.append(mask == i)
         masks = np.stack(masks, axis=0)
         return torch.as_tensor(masks, dtype=torch.uint8)

@@ -29,7 +29,8 @@ def create_model(num_classes):
             continue
         del_conf_loc_dict.update({k: v})
 
-    missing_keys, unexpected_keys = model.load_state_dict(del_conf_loc_dict, strict=False)
+    missing_keys, unexpected_keys = model.load_state_dict(
+        del_conf_loc_dict, strict=False)
     if len(missing_keys) != 0 or len(unexpected_keys) != 0:
         print("missing_keys: ", missing_keys)
         print("unexpected_keys: ", unexpected_keys)
@@ -43,8 +44,25 @@ def main(args):
 
     device = torch.device(args.device)
 
-    results_file = "results{}.txt".format(datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
-
+    results_file = "results{}.txt".format(
+        datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+    with open(results_file, 'a') as f:
+        # 初始化结果 csv, 先写入列名
+        row_names = ['epoch',
+                     'AP@[IoU=0.50:0.95|area=all|maxDets=100]',
+                     'AP@[IoU=0.50|area=all|maxDets=100]',
+                     'AP@[IoU=0.75|area=all|maxDets=100]',
+                     'AP@[IoU=0.50:0.95|area=small|maxDets=100]',
+                     'AP@[IoU=0.50:0.95|area=medium|maxDets=100]',
+                     'AP@[IoU=0.50:0.95|area=large|maxDets=100]',
+                     'AR@[IoU=0.50:0.95|area=all|maxDets=1]',
+                     'AR@[IoU=0.50:0.95|area=all|maxDets=10]',
+                     'AR@[IoU=0.50:0.95|area=all|maxDets=100]',
+                     'AR@[IoU=0.50:0.95|area=small|maxDets=100]',
+                     'AR@[IoU=0.50:0.95|area=medium|maxDets=100]',
+                     'AR@[IoU=0.50:0.95|area=large|maxDets=100]',
+                     'mean_loss', 'learning_rate']
+        f.write(','.join(row_names) + '\n')
     # Data loading code
     print("Loading data")
 
@@ -63,29 +81,37 @@ def main(args):
 
     VOC_root = args.data_path
     # check voc root
-    if os.path.exists(os.path.join(VOC_root, "VOCdevkit")) is False:
-        raise FileNotFoundError("VOCdevkit dose not in path:'{}'.".format(VOC_root))
+    # if os.path.exists(os.path.join(VOC_root, "VOCdevkit")) is False:
+    if os.path.exists(os.path.join(VOC_root)) is False:
+        raise FileNotFoundError(
+            "VOCdevkit dose not in path:'{}'.".format(VOC_root))
 
     # load train data set
-    # VOCdevkit -> VOC2012 -> ImageSets -> Main -> train.txt
-    train_data_set = VOCDataSet(VOC_root, "2012", data_transform["train"], train_set='train.txt')
+    # VOC_root -> ImageSets -> Main -> train.txt
+    train_data_set = VOCDataSet(
+        VOC_root, data_transform["train"], train_set='train.txt')
 
     # load validation data set
-    # VOCdevkit -> VOC2012 -> ImageSets -> Main -> val.txt
-    val_data_set = VOCDataSet(VOC_root, "2012", data_transform["val"], train_set='val.txt')
+    # VOC_root -> ImageSets -> Main -> val.txt
+    val_data_set = VOCDataSet(
+        VOC_root, data_transform["val"], train_set='val.txt')
 
     print("Creating data loaders")
     if args.distributed:
-        train_sampler = torch.utils.data.distributed.DistributedSampler(train_data_set)
-        test_sampler = torch.utils.data.distributed.DistributedSampler(val_data_set)
+        train_sampler = torch.utils.data.distributed.DistributedSampler(
+            train_data_set)
+        test_sampler = torch.utils.data.distributed.DistributedSampler(
+            val_data_set)
     else:
         train_sampler = torch.utils.data.RandomSampler(train_data_set)
         test_sampler = torch.utils.data.SequentialSampler(val_data_set)
 
     if args.aspect_ratio_group_factor >= 0:
         # 统计所有图像比例在bins区间中的位置索引
-        group_ids = create_aspect_ratio_groups(train_data_set, k=args.aspect_ratio_group_factor)
-        train_batch_sampler = GroupedBatchSampler(train_sampler, group_ids, args.batch_size)
+        group_ids = create_aspect_ratio_groups(
+            train_data_set, k=args.aspect_ratio_group_factor)
+        train_batch_sampler = GroupedBatchSampler(
+            train_sampler, group_ids, args.batch_size)
     else:
         train_batch_sampler = torch.utils.data.BatchSampler(
             train_sampler, args.batch_size, drop_last=True)
@@ -105,14 +131,16 @@ def main(args):
 
     model_without_ddp = model
     if args.distributed:
-        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
+        model = torch.nn.parallel.DistributedDataParallel(
+            model, device_ids=[args.gpu])
         model_without_ddp = model.module
 
     params = [p for p in model.parameters() if p.requires_grad]
     optimizer = torch.optim.SGD(
         params, lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 
-    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_step_size, gamma=args.lr_gamma)
+    lr_scheduler = torch.optim.lr_scheduler.StepLR(
+        optimizer, step_size=args.lr_step_size, gamma=args.lr_gamma)
     # lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=args.lr_steps, gamma=args.lr_gamma)
 
     # 如果传入resume参数，即上次训练的权重地址，则接着上次的参数训练
@@ -120,7 +148,8 @@ def main(args):
         # If map_location is missing, torch.load will first load the module to CPU
         # and then copy each parameter to where it was saved,
         # which would result in all processes on the same machine using the same set of devices.
-        checkpoint = torch.load(args.resume, map_location='cpu')  # 读取之前保存的权重文件(包括优化器以及学习率策略)
+        # 读取之前保存的权重文件(包括优化器以及学习率策略)
+        checkpoint = torch.load(args.resume, map_location='cpu')
         model_without_ddp.load_state_dict(checkpoint['model'])
         optimizer.load_state_dict(checkpoint['optimizer'])
         lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
@@ -156,8 +185,9 @@ def main(args):
             # write into txt
             with open(results_file, "a") as f:
                 # 写入的数据包括coco指标还有loss和learning rate
-                result_info = [str(round(i, 4)) for i in coco_info + [mean_loss.item()]] + [str(round(lr, 6))]
-                txt = "epoch:{} {}".format(epoch, '  '.join(result_info))
+                result_info = [str(round(i, 4)) for i in coco_info +
+                               [mean_loss.item()]] + [str(round(lr, 6))]
+                txt = "epoch:{} {}".format(epoch, ','.join(result_info))
                 f.write(txt + "\n")
 
             val_map.append(coco_info[1])  # pascal mAP
@@ -196,14 +226,16 @@ if __name__ == "__main__":
     # 训练文件的根目录(VOCdevkit)
     parser.add_argument('--data-path', default='./', help='dataset')
     # 检测的目标类别个数，不包括背景
-    parser.add_argument('--num_classes', default=20, type=int, help='num_classes')
+    parser.add_argument('--num_classes', default=13,
+                        type=int, help='num_classes')
     # 训练设备类型
     parser.add_argument('--device', default='cuda', help='device')
     # 每块GPU上的batch_size
     parser.add_argument('-b', '--batch-size', default=8, type=int,
                         help='images per gpu, the total batch size is $NGPU x batch_size')
     # 指定接着从哪个epoch数开始训练
-    parser.add_argument('--start_epoch', default=0, type=int, help='start epoch')
+    parser.add_argument('--start_epoch', default=0,
+                        type=int, help='start epoch')
     # 训练的总epoch数
     parser.add_argument('--epochs', default=20, type=int, metavar='N',
                         help='number of total epochs to run')
@@ -222,15 +254,20 @@ if __name__ == "__main__":
                         metavar='W', help='weight decay (default: 1e-4)',
                         dest='weight_decay')
     # 针对torch.optim.lr_scheduler.StepLR的参数
-    parser.add_argument('--lr-step-size', default=5, type=int, help='decrease lr every step-size epochs')
+    parser.add_argument('--lr-step-size', default=5, type=int,
+                        help='decrease lr every step-size epochs')
     # 针对torch.optim.lr_scheduler.MultiStepLR的参数
-    parser.add_argument('--lr-steps', default=[7, 12], nargs='+', type=int, help='decrease lr every step-size epochs')
+    parser.add_argument(
+        '--lr-steps', default=[7, 12], nargs='+', type=int, help='decrease lr every step-size epochs')
     # 针对torch.optim.lr_scheduler.MultiStepLR的参数
-    parser.add_argument('--lr-gamma', default=0.3, type=float, help='decrease lr by a factor of lr-gamma')
+    parser.add_argument('--lr-gamma', default=0.3, type=float,
+                        help='decrease lr by a factor of lr-gamma')
     # 训练过程打印信息的频率
-    parser.add_argument('--print-freq', default=20, type=int, help='print frequency')
+    parser.add_argument('--print-freq', default=20,
+                        type=int, help='print frequency')
     # 文件保存地址
-    parser.add_argument('--output-dir', default='./multi_train', help='path where to save')
+    parser.add_argument(
+        '--output-dir', default='./multi_train', help='path where to save')
     # 基于上次的训练结果接着训练
     parser.add_argument('--resume', default='', help='resume from checkpoint')
     parser.add_argument('--aspect-ratio-group-factor', default=3, type=int)
@@ -245,7 +282,8 @@ if __name__ == "__main__":
     # 开启的进程数(注意不是线程)
     parser.add_argument('--world-size', default=4, type=int,
                         help='number of distributed processes')
-    parser.add_argument('--dist-url', default='env://', help='url used to set up distributed training')
+    parser.add_argument('--dist-url', default='env://',
+                        help='url used to set up distributed training')
 
     args = parser.parse_args()
 

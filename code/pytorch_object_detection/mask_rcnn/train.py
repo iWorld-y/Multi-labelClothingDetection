@@ -7,7 +7,7 @@ from torchvision.ops.misc import FrozenBatchNorm2d
 import transforms
 from network_files import MaskRCNN
 from backbone import resnet50_fpn_backbone
-from my_dataset_coco import CocoDetection
+# from my_dataset_coco import CocoDetection
 from my_dataset_voc import VOCInstances
 from train_utils import train_eval_utils as utils
 from train_utils import GroupedBatchSampler, create_aspect_ratio_groups
@@ -20,13 +20,15 @@ def create_model(num_classes, load_pretrain_weights=True):
     # backbone = resnet50_fpn_backbone(norm_layer=FrozenBatchNorm2d,
     #                                  trainable_layers=3)
     # resnet50 imagenet weights url: https://download.pytorch.org/models/resnet50-0676ba61.pth
-    backbone = resnet50_fpn_backbone(pretrain_path="resnet50.pth", trainable_layers=3)
+    backbone = resnet50_fpn_backbone(
+        pretrain_path="resnet50.pth", trainable_layers=5)
 
     model = MaskRCNN(backbone, num_classes=num_classes)
 
     if load_pretrain_weights:
         # coco weights url: "https://download.pytorch.org/models/maskrcnn_resnet50_fpn_coco-bf2d0c1e.pth"
-        weights_dict = torch.load("./maskrcnn_resnet50_fpn_coco.pth", map_location="cpu")
+        weights_dict = torch.load(
+            "./maskrcnn_resnet50_fpn_coco.pth", map_location="cpu")
         for k in list(weights_dict.keys()):
             if ("box_predictor" in k) or ("mask_fcn_logits" in k):
                 del weights_dict[k]
@@ -44,7 +46,24 @@ def main(args):
     now = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     det_results_file = f"det_results{now}.txt"
     seg_results_file = f"seg_results{now}.txt"
-
+    with open(det_results_file, 'a') as f, open(seg_results_file, 'a') as f2:
+        # 初始化结果 csv, 先写入列名
+        row_names = ['epoch',
+                     'AP@[IoU=0.50:0.95|area=all|maxDets=100]',
+                     'AP@[IoU=0.50|area=all|maxDets=100]',
+                     'AP@[IoU=0.75|area=all|maxDets=100]',
+                     'AP@[IoU=0.50:0.95|area=small|maxDets=100]',
+                     'AP@[IoU=0.50:0.95|area=medium|maxDets=100]',
+                     'AP@[IoU=0.50:0.95|area=large|maxDets=100]',
+                     'AR@[IoU=0.50:0.95|area=all|maxDets=1]',
+                     'AR@[IoU=0.50:0.95|area=all|maxDets=10]',
+                     'AR@[IoU=0.50:0.95|area=all|maxDets=100]',
+                     'AR@[IoU=0.50:0.95|area=small|maxDets=100]',
+                     'AR@[IoU=0.50:0.95|area=medium|maxDets=100]',
+                     'AR@[IoU=0.50:0.95|area=large|maxDets=100]',
+                     'mean_loss', 'learning_rate']
+        f.write(','.join(row_names) + '\n')
+        f2.write(','.join(row_names) + '\n')
     data_transform = {
         "train": transforms.Compose([transforms.ToTensor(),
                                      transforms.RandomHorizontalFlip(0.5)]),
@@ -55,9 +74,10 @@ def main(args):
 
     # load train data set
     # coco2017 -> annotations -> instances_train2017.json
-    train_dataset = CocoDetection(data_root, "train", data_transform["train"])
+    # train_dataset = CocoDetection(data_root, "train", data_transform["train"])
     # VOCdevkit -> VOC2012 -> ImageSets -> Main -> train.txt
-    # train_dataset = VOCInstances(data_root, year="2012", txt_name="train.txt", transforms=data_transform["train"])
+    train_dataset = VOCInstances(
+        data_root, txt_name="train.txt", transforms=data_transform["train"])
     train_sampler = None
 
     # 是否按图片相似高宽比采样图片组成batch
@@ -65,13 +85,16 @@ def main(args):
     if args.aspect_ratio_group_factor >= 0:
         train_sampler = torch.utils.data.RandomSampler(train_dataset)
         # 统计所有图像高宽比例在bins区间中的位置索引
-        group_ids = create_aspect_ratio_groups(train_dataset, k=args.aspect_ratio_group_factor)
+        group_ids = create_aspect_ratio_groups(
+            train_dataset, k=args.aspect_ratio_group_factor)
         # 每个batch图片从同一高宽比例区间中取
-        train_batch_sampler = GroupedBatchSampler(train_sampler, group_ids, args.batch_size)
+        train_batch_sampler = GroupedBatchSampler(
+            train_sampler, group_ids, args.batch_size)
 
     # 注意这里的collate_fn是自定义的，因为读取的数据包括image和targets，不能直接使用默认的方法合成batch
     batch_size = args.batch_size
-    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
+    # number of workers
+    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])
     print('Using %g dataloader workers' % nw)
 
     if train_sampler:
@@ -91,9 +114,10 @@ def main(args):
 
     # load validation data set
     # coco2017 -> annotations -> instances_val2017.json
-    val_dataset = CocoDetection(data_root, "val", data_transform["val"])
+    # val_dataset = CocoDetection(data_root, "val", data_transform["val"])
     # VOCdevkit -> VOC2012 -> ImageSets -> Main -> val.txt
-    # val_dataset = VOCInstances(data_root, year="2012", txt_name="val.txt", transforms=data_transform["val"])
+    val_dataset = VOCInstances(
+        data_root, txt_name="val.txt", transforms=data_transform["val"])
     val_data_loader = torch.utils.data.DataLoader(val_dataset,
                                                   batch_size=1,
                                                   shuffle=False,
@@ -102,7 +126,8 @@ def main(args):
                                                   collate_fn=train_dataset.collate_fn)
 
     # create model num_classes equal background + classes
-    model = create_model(num_classes=args.num_classes + 1, load_pretrain_weights=args.pretrain)
+    model = create_model(num_classes=args.num_classes + 1,
+                         load_pretrain_weights=args.pretrain)
     model.to(device)
 
     train_loss = []
@@ -126,7 +151,8 @@ def main(args):
         # If map_location is missing, torch.load will first load the module to CPU
         # and then copy each parameter to where it was saved,
         # which would result in all processes on the same machine using the same set of devices.
-        checkpoint = torch.load(args.resume, map_location='cpu')  # 读取之前保存的权重文件(包括优化器以及学习率策略)
+        # 读取之前保存的权重文件(包括优化器以及学习率策略)
+        checkpoint = torch.load(args.resume, map_location='cpu')
         model.load_state_dict(checkpoint['model'])
         optimizer.load_state_dict(checkpoint['optimizer'])
         lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
@@ -146,20 +172,23 @@ def main(args):
         lr_scheduler.step()
 
         # evaluate on the test dataset
-        det_info, seg_info = utils.evaluate(model, val_data_loader, device=device)
+        det_info, seg_info = utils.evaluate(
+            model, val_data_loader, device=device)
 
         # write detection into txt
         with open(det_results_file, "a") as f:
             # 写入的数据包括coco指标还有loss和learning rate
-            result_info = [f"{i:.4f}" for i in det_info + [mean_loss.item()]] + [f"{lr:.6f}"]
-            txt = "epoch:{} {}".format(epoch, '  '.join(result_info))
+            result_info = [f"{i:.4f}" for i in det_info +
+                           [mean_loss.item()]] + [f"{lr:.6f}"]
+            txt = "epoch:{} {}".format(epoch, ','.join(result_info))
             f.write(txt + "\n")
 
         # write seg into txt
         with open(seg_results_file, "a") as f:
             # 写入的数据包括coco指标还有loss和learning rate
-            result_info = [f"{i:.4f}" for i in seg_info + [mean_loss.item()]] + [f"{lr:.6f}"]
-            txt = "epoch:{} {}".format(epoch, '  '.join(result_info))
+            result_info = [f"{i:.4f}" for i in seg_info +
+                           [mean_loss.item()]] + [f"{lr:.6f}"]
+            txt = "epoch:{} {}".format(epoch, ','.join(result_info))
             f.write(txt + "\n")
 
         val_map.append(det_info[1])  # pascal mAP
@@ -194,15 +223,20 @@ if __name__ == "__main__":
     # 训练设备类型
     parser.add_argument('--device', default='cuda:0', help='device')
     # 训练数据集的根目录
-    parser.add_argument('--data-path', default='/data/coco2017', help='dataset')
+    parser.add_argument(
+        '--data-path', default='/data/coco2017', help='dataset')
     # 检测目标类别数(不包含背景)
-    parser.add_argument('--num-classes', default=90, type=int, help='num_classes')
+    parser.add_argument('--num-classes', default=13,
+                        type=int, help='num_classes')
     # 文件保存地址
-    parser.add_argument('--output-dir', default='./save_weights', help='path where to save')
+    parser.add_argument(
+        '--output-dir', default='./save_weights', help='path where to save')
     # 若需要接着上次训练，则指定上次训练保存权重文件地址
-    parser.add_argument('--resume', default='', type=str, help='resume from checkpoint')
+    parser.add_argument('--resume', default='', type=str,
+                        help='resume from checkpoint')
     # 指定接着从哪个epoch数开始训练
-    parser.add_argument('--start_epoch', default=0, type=int, help='start epoch')
+    parser.add_argument('--start_epoch', default=0,
+                        type=int, help='start epoch')
     # 训练的总epoch数
     parser.add_argument('--epochs', default=26, type=int, metavar='N',
                         help='number of total epochs to run')
@@ -221,14 +255,17 @@ if __name__ == "__main__":
     parser.add_argument('--lr-steps', default=[16, 22], nargs='+', type=int,
                         help='decrease lr every step-size epochs')
     # 针对torch.optim.lr_scheduler.MultiStepLR的参数
-    parser.add_argument('--lr-gamma', default=0.1, type=float, help='decrease lr by a factor of lr-gamma')
+    parser.add_argument('--lr-gamma', default=0.1, type=float,
+                        help='decrease lr by a factor of lr-gamma')
     # 训练的batch size(如果内存/GPU显存充裕，建议设置更大)
     parser.add_argument('--batch_size', default=2, type=int, metavar='N',
                         help='batch size when training.')
     parser.add_argument('--aspect-ratio-group-factor', default=3, type=int)
-    parser.add_argument("--pretrain", type=bool, default=True, help="load COCO pretrain weights.")
+    parser.add_argument("--pretrain", type=bool, default=True,
+                        help="load COCO pretrain weights.")
     # 是否使用混合精度训练(需要GPU支持混合精度)
-    parser.add_argument("--amp", default=False, help="Use torch.cuda.amp for mixed precision training")
+    parser.add_argument("--amp", default=True,
+                        help="Use torch.cuda.amp for mixed precision training")
 
     args = parser.parse_args()
     print(args)

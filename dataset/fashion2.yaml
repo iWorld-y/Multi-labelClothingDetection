@@ -1,6 +1,7 @@
 path: /root/autodl-tmp/DeepFashion2       # dataset root dir
-train: train
-val: validation
+train: /root/autodl-tmp/DeepFashion2/train
+val: /root/autodl-tmp/DeepFashion2/validation
+is_coco: False
 # test: test
 # Classes
 nc: 13  # number of classes
